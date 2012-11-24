@@ -25,27 +25,32 @@ SOUR format does not:
 
 1) Format Specs
 SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the first character of each line tells the parser what to do:
-	h	version and model info, unimportant
+	h		version and model info
 	p b0	begin base asset, unanimated
-	v	indexed vertex: x,y,z	
-	n	indexed vertex normal:	x,y,z
-	t	indexed vertex tangent:	x,y,z
-	u	indexed uv:	x,y
-	f	face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, (separate indices for the vert,
-			n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and
-			uvs are all indexed separately)
+	v		indexed vertex: x,y,z	
+	n		indexed vertex normal:	x,y,z
+	t		indexed vertex tangent:	x,y,z
+	u		indexed uv:	x,y
+	f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, 
+				(separate indices for the vert, n,t,and u for each vertex 
+				in this triangle- that is, verts, normals, tangents, and
+				uvs are all indexed separately)
 	p b1	end base asset
-	p a0	begin animation (if has animation, otherwise, skip everything between this and "p a1"
+	p a0	begin animation (if has animation, otherwise, skip 
+				everything between this and "p a1"
 	p s0	begin sequence
-	l	label ("sequence name")
+	l		label ("sequence name")
 	p f0	begin frame
-	d	duration of frame
+	d		duration of frame
 	v	
-	n	(optional)
-	t	(optional)
-	u	(optional) (Note: More "p f0,d,v,n,t,u,p f1" frames can be added
-	p f1	end frame (Note: frames do not get face info b/c face indices are identical across frames and the base)
-	p s1	end sequence (Note: more sequences can be added to the animation, just like frames to a sequence)
+	n		(optional)
+	t		(optional)
+	u		(optional) (Note: More "p f0,d,v,n,t,u,p f1" frames can 
+				be added)
+	p f1	end frame (Note: frames do not get face info b/c face 
+				indices are identical across frames and the base)
+	p s1	end sequence (Note: more sequences can be added to the
+				animation, just like frames to a sequence)
 	p a1	end anim
 	
 
@@ -63,9 +68,11 @@ To install the SOUR python export script to Blender, the following steps must be
 To export as .sour:
 	a) Select the mesh
 	b) Go to File -> Export -> SOUR
-	c) If the mesh has animation sequences, each should have a marker with the name of that sequence 
-	   at its first frame and another ending in "_end" at the last frame
-	d) If the mesh has animation, check "Export Animation" in the export options, name the file, and export
+	c) If the mesh has animation sequences, each should have a 
+		marker with the name of that sequence at its first frame
+		and another ending in "_end" at the last frame
+	d) If the mesh has animation, check "Export Animation" in the 
+		export options, name the file, and export
 
 
 4) Parsing with Away3D
