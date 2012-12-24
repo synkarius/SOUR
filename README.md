@@ -35,8 +35,7 @@ SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the f
 > n		indexed vertex normal:	x,y,z  
 > t		indexed vertex tangent:	x,y,z  
 > u		indexed uv:	x,y  
-> f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u,   
->>	(separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)  
+> f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, (separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)  
 > a		attachment point, comma separated, consisting of a name then 6 numbers: head xyz and tail xyz  
 > p b1	end base asset  
 > p a0	begin animation (if has animation, otherwise, skip everything between this and "p a1"  
