@@ -18,6 +18,7 @@ SOUR format has the following attributes:
 * at time of writing, has:
     * parser compatible with Away3D 4.0.0 - 4.0.9
     * exporter compatible with patched Blender 2.64
+
 SOUR format does not:
 * store cameras, lights, textures, multiple objects, or bones
 
