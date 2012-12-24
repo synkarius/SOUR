@@ -29,26 +29,26 @@ SOUR format does not:
 ## Format Specs
 SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the first character of each line tells the parser what to do:
 
-> h		version and model info
-> p b0	begin base asset, unanimated
-> v		indexed vertex: x,y,z	
-> n		indexed vertex normal:	x,y,z
-> t		indexed vertex tangent:	x,y,z
-> u		indexed uv:	x,y
-> f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, 
->>	(separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)
-> a		attachment point, comma separated, consisting of a name then 6 numbers: head xyz and tail xyz
-> p b1	end base asset
-> p a0	begin animation (if has animation, otherwise, skip everything between this and "p a1"
-> p s0	begin sequence
-> l		label ("sequence name")
-> p f0	begin frame
-> d		duration of frame
-> v	
-> a		attachment point, as above
-> p f1	end frame (Note: frames do not get face info b/c face indices are identical across frames and the base)
-> p s1	end sequence (Note: more sequences can be added to the animation, just like frames to a sequence)
-> p a1	end anim
+> h		version and model info  
+> p b0	begin base asset, unanimated  
+> v		indexed vertex: x,y,z  
+> n		indexed vertex normal:	x,y,z  
+> t		indexed vertex tangent:	x,y,z  
+> u		indexed uv:	x,y  
+> f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u,   
+>>	(separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)  
+> a		attachment point, comma separated, consisting of a name then 6 numbers: head xyz and tail xyz  
+> p b1	end base asset  
+> p a0	begin animation (if has animation, otherwise, skip everything between this and "p a1"  
+> p s0	begin sequence  
+> l		label ("sequence name")  
+> p f0	begin frame  
+> d		duration of frame  
+> v	 
+> a		attachment point, as above  
+> p f1	end frame (Note: frames do not get face info b/c face indices are identical across frames and the base)  
+> p s1	end sequence (Note: more sequences can be added to the animation, just like frames to a sequence)  
+> p a1	end anim  
 	
 
 
