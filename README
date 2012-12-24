@@ -1,40 +1,38 @@
- =========================
-| SOUR Format Docs v 1.1  |
- =========================
-
-Contents:
-	(0) Description
-	(1) Format Specs
-	(2) Installing the Python script to Blender
-	(3) Exporting with Blender
-	(4) Parsing with Away3D
+#SOUR Format Docs v 1.2
 
 
-0) Description
+##Contents:
+*Description
+*Format Specs
+*Installing the Python script to Blender
+*Exporting with Blender
+*Parsing with Away3D
+
+
+##Description
 SOUR format has the following attributes:
-	- compressed
-	- indexed
-	- vertex animation optional (can be based on a rig or shape keys)
-	- stores vertices, normals, tangents, uvs, and faces
-	- at time of writing, has:
-		-- parser compatible with Away3D 4.0.0 - 4.0.9
-		-- exporter compatible with patched Blender 2.64
+*compressed
+*indexed
+*vertex animation optional (can be based on a rig or shape keys)
+*stores vertices, normals, tangents, uvs, and faces
+*at time of writing, has:
+    *parser compatible with Away3D 4.0.0 - 4.0.9
+    *exporter compatible with patched Blender 2.64
 SOUR format does not:
-	- store cameras, lights, textures, multiple objects, or bones
+*store cameras, lights, textures, multiple objects, or bones
 
 
 1) Format Specs
 SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the first character of each line tells the parser what to do:
-	h		version and model info
-	p b0	begin base asset, unanimated
-	v		indexed vertex: x,y,z	
-	n		indexed vertex normal:	x,y,z
-	t		indexed vertex tangent:	x,y,z
-	u		indexed uv:	x,y
-	f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, 
-				(separate indices for the vert, n,t,and u for each vertex 
-				in this triangle- that is, verts, normals, tangents, and
-				uvs are all indexed separately)
+>h		version and model info
+>p b0	begin base asset, unanimated
+>v		indexed vertex: x,y,z	
+>n		indexed vertex normal:	x,y,z
+>t		indexed vertex tangent:	x,y,z
+>u		indexed uv:	x,y
+>f		face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, 
+>>(separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)
+	a		attachment point, comma separated, consisting of a name then 6 numbers: head xyz and tail xyz
 	p b1	end base asset
 	p a0	begin animation (if has animation, otherwise, skip 
 				everything between this and "p a1"
@@ -43,10 +41,7 @@ SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the f
 	p f0	begin frame
 	d		duration of frame
 	v	
-	n		(optional)
-	t		(optional)
-	u		(optional) (Note: More "p f0,d,v,n,t,u,p f1" frames can 
-				be added)
+	a		attachment point, as above
 	p f1	end frame (Note: frames do not get face info b/c face 
 				indices are identical across frames and the base)
 	p s1	end sequence (Note: more sequences can be added to the
