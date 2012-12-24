@@ -1,4 +1,4 @@
-package com.kumoshi.custom 
+package classes.ThirdParty 
 {
 	import away3d.animators.nodes.VertexClipNode;
 	import away3d.animators.VertexAnimationSet;
@@ -8,6 +8,7 @@ package com.kumoshi.custom
 	import away3d.loaders.parsers.ParserBase;
 	import away3d.loaders.parsers.ParserDataFormat;
 	import away3d.loaders.parsers.utils.ParserUtil;
+	import flash.geom.Vector3D;
 	import flash.utils.ByteArray;
 	/**
 	 * ...
@@ -16,10 +17,9 @@ package com.kumoshi.custom
 	public class SOURParser extends ParserBase 
 	{
 		private var _hasAnim:Boolean;
-		private var _animHasVertsOnly:Boolean;
-		private var _hasNormals:Boolean;
-		private var _hasTangents:Boolean;
-		private var _hasUVs:Boolean;
+		private var _hasAttachments:Boolean;
+		
+		
 		private var _autoderiveMissing:Boolean;
 		
 		private var _isReadingAnim:Boolean;
@@ -61,13 +61,16 @@ package com.kumoshi.custom
 		
 		
 		private var _seqName:String;
-		private var _seqDurations:Vector.<uint>;
+		private var _seqDurations:Vector.<Number>;//data comes in in seconds, 
 		private var _seqGeoms:Vector.<Geometry>;
 		private var _faceIndsAndTangs:Vector.<uint>;
 		private var _vertexAnimSet:VertexAnimationSet;
 		
 		private var _vertCache:Vector.<String>;
 		private var _tangCache:Vector.<String>;
+		
+		
+		private var _attachmentHelper:AttachmentHelper;
 		
 		/**
 		 * 
@@ -89,21 +92,27 @@ package com.kumoshi.custom
 		{
 			if (!_setupComplete) {
 				if (hasTime()) {
-					var dataBytes:ByteArray = _data;
-					var copy:ByteArray = new ByteArray();
-					dataBytes.position = 0;
-					dataBytes.readBytes(copy, 0, dataBytes.length);
-					copy.uncompress();
-					var _dataStr:String = copy.toString();
-					//trace(_dataStr);
-					_dataArray = copy.toString().split("\n");
-					_hasAnim = _dataArray.indexOf("<anim>") != -1;
+					//figure out if is compressed:
+					var isCompressed:Boolean = String(_data).substr(0, 10) != "h     SOUR";
+					
+					var _dataStr:String;
+					if (isCompressed) {
+						var dataBytes:ByteArray = _data;
+						dataBytes.position = 0;
+						dataBytes.uncompress();
+						_dataStr = dataBytes.toString();
+					} else {
+						_dataStr = String(_data);
+					}
+					
+					_dataArray = _dataStr.split("\n");
+					//_hasAnim = _dataArray.indexOf("p a0") != -1;//set elsewhere
 					_lastLine = _dataArray.length - 1;
 					_setupComplete = true;
 				}
 			}
 			
-			trace("rounds of parsing: " + _rounds++ + " line, lastline: " + _line + "," + _lastLine);
+			//trace("rounds of parsing: " + _rounds++ + " line, last line: " + _line + ", " + _lastLine);
 			
 			while (hasTime() && (!_allLinesRead)) {
 				parseLine();
@@ -123,6 +132,12 @@ package com.kumoshi.custom
 				_animFinalized = true;
 			}
 			if (_allLinesRead && _baseFinalized && (_animFinalized || (!_hasAnim)) ) {
+				
+				if (_hasAttachments) {
+					finalizeAsset(_attachmentHelper);
+				}
+				
+				
 				_allWorkComplete = true;
 				dispose();
 			}
@@ -153,10 +168,10 @@ package com.kumoshi.custom
 					break;//ignore header
 				case "o":
 					_hasAnim = Boolean(int(_tempArray[0] ));
-					_animHasVertsOnly = Boolean(int(_tempArray[1] ));
-					_hasNormals = Boolean(int(_tempArray[2] ));
-					_hasTangents = Boolean(int(_tempArray[3] ));
-					_hasUVs = Boolean(int(_tempArray[4] ));
+					_hasAttachments = Boolean(int(_tempArray[1] ));
+					if (_hasAttachments) {
+						_attachmentHelper = new AttachmentHelper();
+					}
 					break;
 				case "p":
 					processSomething(_line);
@@ -164,17 +179,16 @@ package com.kumoshi.custom
 				case "v":
 					_indexedVertices.push(Number(_tempArray[0]), Number(_tempArray[1]), Number(_tempArray[2]));
 					break;
-				case "n":	//case "animNormal":
+				case "n":
 					_indexedNormals.push(Number(_tempArray[0]), Number(_tempArray[1]), Number(_tempArray[2]));
 					break;
-				case "t":	//case "animTangent":
+				case "t":
 					_indexedTangents.push(Number(_tempArray[0]), Number(_tempArray[1]), Number(_tempArray[2]));
 					break;
-				case "u":	//case "animUV":
+				case "u":
 					_indexedUVs.push(Number(_tempArray[0]), Number(_tempArray[1]));
 					break;
 				case "f":	//a face is vert/tang/v/t/v/t
-					
 					//the 3rd-6th arguments here are the destination for whatever's currently in the _indexed<thing> Vectors
 					addVertexOfFace(_tempArray, 0, _baseVertices, _baseNormals, _baseTangents, _baseUVs, _baseIndices);
 					addVertexOfFace(_tempArray, 1, _baseVertices, _baseNormals, _baseTangents, _baseUVs, _baseIndices);
@@ -194,9 +208,17 @@ package com.kumoshi.custom
 					_seqName = String(_line);
 					break;
 				case "d":
-					_seqDurations.push(uint(_line));
+					_seqDurations.push(Number(_line));
 					break;
-				default:	throw new Error("Asset badly formed"); break;
+				case "a":
+					_attachmentHelper.addPoint(
+						_tempArray[0], 
+						new Vector3D(Number(_tempArray[1]), Number(_tempArray[2]), Number(_tempArray[3])),
+						new Vector3D(Number(_tempArray[4]), Number(_tempArray[5]), Number(_tempArray[6])),
+						(!_isReadingAnim)?"baseFrame":_seqName,
+						(!_isReadingAnim)?0:_seqDurations[_seqDurations.length - 1]);
+					break;
+				default:	throw new Error("Asset badly formed: " + _lineType); break;
 			}
 		}
 		
@@ -208,9 +230,9 @@ package com.kumoshi.custom
 					_baseGeom.subGeometries[0] = new SubGeometry();
 					_baseIndices = new Vector.<uint>();			//create empty final vectors
 					_baseVertices = new Vector.<Number>();
-					_baseNormals = (_hasNormals)?new Vector.<Number>():null;
-					_baseTangents = (_hasTangents)?new Vector.<Number>():null;//guts
-					_baseUVs = (_hasUVs)?new Vector.<Number>():null;
+					_baseNormals = new Vector.<Number>();
+					_baseTangents = new Vector.<Number>();//guts
+					_baseUVs = new Vector.<Number>();
 					if (!_baseNormals)_baseGeom.subGeometries[0].autoDeriveVertexNormals = true;
 					if (!_baseTangents)_baseGeom.subGeometries[0].autoDeriveVertexTangents = true;
 					if (!_baseUVs)_baseGeom.subGeometries[0].autoGenerateDummyUVs = true;
@@ -226,21 +248,9 @@ package com.kumoshi.custom
 				case "b1"://end base
 					_baseGeom.subGeometries[0].updateIndexData(_baseIndices);
 					_baseGeom.subGeometries[0].updateVertexData(_baseVertices);
-					if (_hasNormals) {
-						_baseGeom.subGeometries[0].updateVertexNormalData(_baseNormals);
-					} else {
-						_baseGeom.subGeometries[0].autoDeriveVertexNormals = true;
-					}
-					if (_hasTangents) {
-						_baseGeom.subGeometries[0].updateVertexTangentData(_baseTangents);
-					} else {
-						_baseGeom.subGeometries[0].autoDeriveVertexTangents = true;
-					}
-					if (_hasUVs) {
-						_baseGeom.subGeometries[0].updateUVData(_baseUVs);
-					} else {
-						_baseGeom.subGeometries[0].autoGenerateDummyUVs = true;
-					}
+					_baseGeom.subGeometries[0].updateVertexNormalData(_baseNormals);
+					_baseGeom.subGeometries[0].updateVertexTangentData(_baseTangents);
+					_baseGeom.subGeometries[0].updateUVData(_baseUVs);
 					_baseComplete = true;
 					break;
 				case "a0"://begin animation
@@ -251,30 +261,25 @@ package com.kumoshi.custom
 					_animComplete = true;
 					break;
 				case "s0"://begin animation sequence
-					_seqDurations = new Vector.<uint>();
+					_seqDurations = new Vector.<Number>();
 					_seqGeoms = new Vector.<Geometry>();
 					break;
 				case "s1"://end animation sequence
 					var vcn:VertexClipNode = new VertexClipNode();
 					for (var f:int = 0; f < _seqGeoms.length; f++) {
-						vcn.addFrame(_seqGeoms[f], _seqDurations[f] * 60);
+						vcn.addFrame(_seqGeoms[f], Number(_seqDurations[f]));
 						vcn.fixedFrameRate = true;
+						//trace("adding frame of: " +_seqName + " dur in milliseconds: " + Number(_seqDurations[f] * 33.33));
 					}
 					var vas:VertexAnimationState = new VertexAnimationState(vcn);
 					_vertexAnimSet.addState(_seqName, vas);
+					
 					break;
 				case "f0"://begin animation frame
 					_indexer = 0;
-					
-					
-					
 					_indexedVertices = new Vector.<Number>();	//create empty temporary vectors for de-indexing
-					if(_hasNormals && (!_animHasVertsOnly))_indexedNormals = new Vector.<Number>();
-					if(_hasTangents && (!_animHasVertsOnly))_indexedTangents = new Vector.<Number>();
-					if(_hasUVs && (!_animHasVertsOnly))_indexedUVs = new Vector.<Number>();
 					break;
 				case "f1"://end animation frame
-					
 					
 					
 					var seqSubGeom:SubGeometry = new SubGeometry();
@@ -292,12 +297,7 @@ package com.kumoshi.custom
 					
 					_animIndices = _baseIndices;//always the same, they index identically and face-index identically
 					_animVertices = new Vector.<Number>();
-					_animNormals = (_hasNormals && (!_animHasVertsOnly))?new Vector.<Number>():null;
-					_animTangents = (_hasTangents && (!_animHasVertsOnly))?new Vector.<Number>():null;
-					_animUVs = (_hasUVs && (!_animHasVertsOnly))?new Vector.<Number>():null;
 					
-					
-					trace("animnormals: " + _animUVs);
 					
 					//addvertexofface * 3, add everything (except indices) b/c some things are null
 					var fiat:Vector.<uint> = _faceIndsAndTangs;
@@ -305,9 +305,9 @@ package com.kumoshi.custom
 						//rebuilding fake temparray of face info
 						var _tempArray:Array = [fiat[y * 12 + 0], fiat[y * 12 + 1], fiat[y * 12 + 2], fiat[y * 12 + 3], fiat[y * 12 + 4], fiat[y * 12 + 5],
 						fiat[y * 12 + 6], fiat[y * 12 + 7], fiat[y * 12 + 8], fiat[y * 12 + 9], fiat[y * 12 + 10], fiat[y * 12 + 11] ];
-						addVertexOfFace(_tempArray, 0, _animVertices, _animNormals, _animTangents, _animUVs);
-						addVertexOfFace(_tempArray, 1, _animVertices, _animNormals, _animTangents, _animUVs);
-						addVertexOfFace(_tempArray, 2, _animVertices, _animNormals, _animTangents, _animUVs);
+						addVertexOfFace(_tempArray, 0, _animVertices);
+						addVertexOfFace(_tempArray, 1, _animVertices);
+						addVertexOfFace(_tempArray, 2, _animVertices);
 					}
 					
 					//if still null & not autoderive, copy from base
@@ -380,6 +380,8 @@ package com.kumoshi.custom
 		
 		
 		public function dispose():void {
+			_attachmentHelper = null;
+			
 			_dataArray = null;
 			
 			_indexedVertices = null;
@@ -434,13 +436,15 @@ package com.kumoshi.custom
 			var content:String = ParserUtil.toString(data);
 			var hasV:Boolean;
 			var hasB:Boolean;
+			var hasCompressed:Boolean;
 			
 			if (content) {
 				hasB = content.indexOf("p b0") != -1;
 				hasV = content.indexOf("v") != -1;
+				hasCompressed = content.indexOf("xœ¤") != -1;
 			}
 			
-			return hasV && hasB;
+			return (hasV && hasB) || hasCompressed;
 		}
 		
 	}

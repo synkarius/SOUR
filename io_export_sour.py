@@ -19,7 +19,7 @@
 bl_info = {
     "name": "Export SOUR(.sour)",
     "author": "David Conway (synkarius)",
-    "version": (0, 4),
+    "version": (0, 5),
     "blender": (2, 6, 4),
     "api": 51232,
     "location": "File > Export > SOUR Format (.sour)",
@@ -34,7 +34,7 @@ import bpy
 from bpy.props import *
 from bpy_extras.io_utils import ExportHelper
 import zlib
-
+from mathutils import Vector
 
 ###### EXPORT OPERATOR #######
 class Export_sour(bpy.types.Operator, ExportHelper):
@@ -44,66 +44,99 @@ class Export_sour(bpy.types.Operator, ExportHelper):
 
     filename_ext = ".sour"
 
+    selectedObj = None
+    selectedArma = None
+
+    model_scale = IntProperty(name="Scale",
+        description="Number to Scale Model By",
+        default=1
+    )
+
     export_anim = BoolProperty(name="Animation",
         description="Exports Animation Data",
         default=False,
     )
-    export_anim_verts_only = BoolProperty(name="Anim Verts Only",#currently makes no difference(v0.43)
-        description="Only export vertices for Animation",
-        default=True,
+    export_attach_points = BoolProperty(name="Attachments",
+        description="Exports 'Attachment Point' Info",
+        default=False,
     )
-    export_normals = BoolProperty(name="Export Vertex Normals",
-        description="",
-        default=True,
-    )
-    export_tangents = BoolProperty(name="Export Vertex Tangents",
-        description="",
-        default=True,
-    )
-    export_uvs = BoolProperty(name="Export UVs",
-        description="",
-        default=True,
-    )
-    
+    use_compression = BoolProperty(name="Compress",
+        description="Compress the Model using COMPRESS Algorithm",
+        default=True)
 
-    
+    skeleton = None
 
     def writeVertexAnimated(self, baseModel, filename, sequences=None):
         
         outString = ""
-        outString += "h     SOUR Format 0.43\n"
-        outString += "h     mi: "+str(baseModel[5])+"   mt: " + str(baseModel[6])+"   mf: " + str(baseModel[7])+"\n\n"
-        outString += "o " + str(int(self.export_anim))+","+str(int(self.export_anim_verts_only))+","+str(int(self.export_normals))+","+str(int(self.export_tangents))+","+str(int(self.export_uvs))+"\n\n"
+        outString += "h     SOUR Format 0.51\n"
+        outString += "h     i: "+str(baseModel[5])+"   t: " + str(baseModel[6])+"   f: " + str(baseModel[7])+"\n\n"
+        outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+"\n\n"
         outString += "p b0"+"\n\n"
         outString += baseModel[0]+"\n\n"
         outString += baseModel[1]+"\n\n"
         outString += baseModel[2]+"\n\n"
         outString += baseModel[3]+"\n\n"
         outString += baseModel[4]+"\n\n"
+        if self.export_attach_points:#if attachment points
+            ap = baseModel[8]
+            for i in range(0,len(ap)):
+                outString += "a " + ap[i][0]+","+str(ap[i][1])+","+str(ap[i][2])+","+str(ap[i][3])+","+str(ap[i][4])+","+str(ap[i][5])+","+str(ap[i][6])+"\n"
+            outString += "\n"
         outString += "p b1"+"\n\n"
         
-        if sequences:
+        if self.export_anim:
             outString += "p a0\n\n"
-            for s in range(0,len(sequences)):
+            for s in range(0,len(sequences)):# each seq is a [name,duration,vertsList,(ap/None)]
                 seq = sequences[s]
                 outString += "p s0"+"\n\n"
                 outString += "l " + str(seq[0])+"\n\n"#name
                 for f in range (1,len(seq)):
-                    position = f%2
-                    if position == 1:
+                    modDur = None
+                    modVerts = None
+                    modAtc = None
+                    position = None
+                    if self.export_attach_points:
+                        modDur = 1
+                        modVerts = 2
+                        modAtc = 0
+                        position = f%3
+                    else:
+                        modDur = 1
+                        modVerts = 0
+                        modAtc = 99
+                        position = f%2
+                    
+                    #position = f%3 if self.export_attach_points else f%2
+                    if position == modDur:
                         outString += "p f0"+"\n\n"
                         outString += "d " + str(seq[f])+"\n\n"
-                    if position == 0:
+                    if position == modVerts:#verts
+                        #unsure
                         outString += seq[f]+"\n\n"
-                        outString += "p f1"+"\n\n"#goes on the last "position" in each frame
+                    if position == modAtc:
+                        #if self.export_attach_points:#if attachment points
+                        ap = seq[f]
+                        for i in range(0,len(ap)):
+                            outString += "a " + ap[i][0]+","+str(ap[i][1])+","+str(ap[i][2])+","+str(ap[i][3])+","+str(ap[i][4])+","+str(ap[i][5])+","+str(ap[i][6])+"\n"
+                        outString += "\n"
+                            
+                            
+                            
+                            
+                    outString += "p f1"+"\n\n"#goes on the last "position" in each frame
                 outString += "p s1"+"\n\n"#close sequence
             outString += "p a1\n\n"
-                    
-                
         
-        data = zlib.compress(bytes(outString, 'UTF-8'))
-        outfile = open(filename, "wb")#, encoding="utf8", newline="\n")
-        outfile.write(data)#outString)
+        
+        outFile = None
+        if self.use_compression:
+            data = zlib.compress(bytes(outString, 'UTF-8'))
+            outfile = open(filename, "wb")
+            outfile.write(data)
+        else:
+            outfile = open(filename, "w", encoding="utf8", newline="\n")
+            outfile.write(outString)
         outfile.close()
     
       
@@ -167,25 +200,24 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         
         sequences = []
         seq = None
-        #sequences structure: [ [name, duration, verts, norms, tangs, uvs  d, v, n, t, u, d, v, n, t, u, ...][][][] ]
+        blenderFramerate = 30#how many Blender timeline units equates to one second
+        secondsToMilliseconds = 1000
+        #sequences structure: [ [name, duration, verts][][][] ]------> [sequence [frame][frame][frame] ]
         for h in range(0,len(allKeyframes)):
             bpy.context.scene.frame_set(allKeyframes[h])#assumes the markers are set on frame 0 of each animation sequence
             if allKeyframes[h] in starts:
                 seq = []
                 seq.append(names[nameIndex])
                 nameIndex += 1
-            seq.append(allKeyframeDurations[h])
+            seq.append(allKeyframeDurations[h]/blenderFramerate*secondsToMilliseconds)
             
             meshGeo = mesh.to_mesh(bpy.context.scene, True, 'PREVIEW')
             animBase = self.createVertexAnimBase(meshGeo)#0 verts, 1 norms, 2 tangents
             
             seq.append(animBase[0])#verts
-            #seq.append(animBase[1])#normals#TODO: allow these to be added to animation frames
-            #seq.append(animBase[2])#tangs
-            #seq.append(animBase[3])#uvs
-            #seq.append(animBase[4])#faces
+            if self.export_attach_points:
+                seq.append(animBase[8])
             
-            #sequences.append([names[h]])
             
             if allKeyframes[h] in ends:
                 sequences.append(seq)
@@ -208,7 +240,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         else:
             vux,vuy = 0,0
         
-        vertexStr = "v " + str(vpx)+","+str(vpy)+","+str(vpz)
+        vertexStr = "v " + str(vpx * self.model_scale)+","+str(vpy * self.model_scale)+","+str(vpz * self.model_scale)
         normalStr = "n " + str(vnx)+","+str(vny)+","+str(vnz)
         tangentStr = "t " + str(vtx)+","+str(vty)+","+str(vtz)
         uvStr = "u " + str(vux)+","+str(vuy)
@@ -226,7 +258,6 @@ class Export_sour(bpy.types.Operator, ExportHelper):
             vertexCache.append(vertexStr)
             rcpfd += str(vIndex)
             rv = vertexStr
-           #rn = normalStr
             vIndex += 1
         else:
             rcpfd += str(vertexCache.index(vertexStr))
@@ -247,7 +278,6 @@ class Export_sour(bpy.types.Operator, ExportHelper):
             tangentCache.append(tangentStr)
             rcpfd += str(tIndex)
             rt = tangentStr
-            #ru = uvStr
             tIndex += 1
         else:#
             rcpfd += str(tangentCache.index(tangentStr))
@@ -261,7 +291,8 @@ class Export_sour(bpy.types.Operator, ExportHelper):
             uIndex += 1
         else:#
             rcpfd += str(uvCache.index(uvStr))
-            
+        
+        
         return [rv, rn, rt, ru, rcpfd, vIndex, nIndex, tIndex, uIndex]
     
     def createVertexAnimBase(self, mesh):
@@ -376,8 +407,25 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                     uIndex = extr[8]
                 numfaces += 1
             
-            
-        return [vertexData,normalData,tangentData,uvData,faceData, len(vertexCache), len(tangentCache), numfaces]        
+        #get attachment(s) info at this point in time
+        ap = None
+        if self.export_attach_points:
+            ap = []
+            mwInv = self.selectedObj.matrix_world.copy().inverted()
+            for i in range(0,len(self.skeleton.pose.bones)):
+                if self.skeleton.pose.bones[i].name[:11] == "_attach_to_":#"_attach_to_", the naming convention is 11 characters long
+                    #print("found attachment bone: " + self.skeleton.pose.bones[i].name[11:])
+                    bone = self.skeleton.pose.bones[i]
+                    h = bone.head
+                    t = bone.tail
+                    
+                    
+                    gh = Vector((h.x,h.y,h.z))*mwInv#global coords of bone head
+                    gt = Vector((t.x,t.y,t.z))*mwInv#global coords of bone tail
+                    
+                    ap.append([bone.name[11:], gh.x, -gh.y, -gh.z, gt.x, -gt.y, -gt.z])#negate y and z of tail
+                    
+        return [vertexData,normalData,tangentData,uvData,faceData, len(vertexCache), len(tangentCache), numfaces, ap]        
 
 
     @classmethod
@@ -388,8 +436,14 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         props = self.properties
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
+        
+        
+        #bpy.ops.object.mode_set(mode='POSE')
+        self.selectedObj = bpy.context.scene.objects.active#save a reference to this for matrix_world
 
         mesh = bpy.context.scene.objects.active.to_mesh(bpy.context.scene, True, 'PREVIEW')
+        if self.export_attach_points:
+            self.skeleton = bpy.context.scene.objects.active.find_armature()
         frames = self.createAnimation(mesh) if self.export_anim else None
         self.writeVertexAnimated(self.createVertexAnimBase(mesh), filepath, frames)
 
