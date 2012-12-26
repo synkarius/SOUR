@@ -1,4 +1,4 @@
-package classes.ThirdParty 
+package com.kumoshi
 {
 	import away3d.animators.nodes.VertexClipNode;
 	import away3d.animators.VertexAnimationSet;

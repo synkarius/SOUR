@@ -29,25 +29,25 @@ SOUR format does not:
 ## Format Specs
 SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the first character of each line tells the parser what to do:
 
-> h	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;version and model info  
-> p b0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin base asset, unanimated  
-> v	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex: x,y,z  
-> n	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex normal:	x,y,z  
-> t	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex tangent:	x,y,z  
-> u	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed uv:	x,y  
-> f	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, (separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)  
-> a	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attachment point, comma separated, consisting of a name then 6 numbers: head xyz and tail xyz  
-> p b1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end base asset  
-> p a0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin animation (if has animation, otherwise, skip everything between this and "p a1"  
-> p s0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin sequence  
-> l     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label ("sequence name")  
-> p f0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin frame  
-> d     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;duration of frame  
-> v	 
-> a     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attachment point, as above  
-> p f1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end frame (Note: frames do not get face info b/c face indices are identical across frames and the base)  
-> p s1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end sequence (Note: more sequences can be added to the animation, just like frames to a sequence)  
-> p a1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end anim  
+* h	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;version and model info  
+* p b0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin base asset, unanimated  
+* v	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex: x,y,z  
+* n	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex normal:	x,y,z  
+* t	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex tangent:	x,y,z  
+* u	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed uv:	x,y  
+* f	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;face consisting of 12 numbers:	v,n,t,u, v,n,t,u, v,n,t,u, (separate indices for the vert, n,t,and u for each vertex in this triangle- that is, verts, normals, tangents, and uvs are all indexed separately)  
+* a	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attachment point, comma separated, consisting of a name then 6 numbers: head xyz and tail xyz  
+* p b1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end base asset  
+* p a0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin animation (if has animation, otherwise, skip everything between this and "p a1"  
+* p s0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin sequence  
+* l     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label ("sequence name")  
+* p f0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin frame  
+* d     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;duration of frame  
+* v	 
+* a     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attachment point, as above  
+* p f1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end frame (Note: frames do not get face info b/c face indices are identical across frames and the base)  
+* p s1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end sequence (Note: more sequences can be added to the animation, just like frames to a sequence)  
+* p a1  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end anim  
 	
 
 

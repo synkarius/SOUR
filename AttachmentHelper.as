@@ -1,4 +1,4 @@
-package classes.ThirdParty 
+package com.kumoshi
 {
 	import away3d.animators.VertexAnimator;
 	import away3d.containers.ObjectContainer3D;

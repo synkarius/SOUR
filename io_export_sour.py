@@ -69,7 +69,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
     def writeVertexAnimated(self, baseModel, filename, sequences=None):
         
         outString = ""
-        outString += "h     SOUR Format 0.51\n"
+        outString += "h     SOUR Format 0.52\n"
         outString += "h     i: "+str(baseModel[5])+"   t: " + str(baseModel[6])+"   f: " + str(baseModel[7])+"\n\n"
         outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+"\n\n"
         outString += "p b0"+"\n\n"
@@ -114,17 +114,20 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                     if position == modVerts:#verts
                         #unsure
                         outString += seq[f]+"\n\n"
+                        if not self.export_attach_points:
+                            outString += "p f1"+"\n\n"#goes on the last "position" in each frame
                     if position == modAtc:
                         #if self.export_attach_points:#if attachment points
                         ap = seq[f]
                         for i in range(0,len(ap)):
                             outString += "a " + ap[i][0]+","+str(ap[i][1])+","+str(ap[i][2])+","+str(ap[i][3])+","+str(ap[i][4])+","+str(ap[i][5])+","+str(ap[i][6])+"\n"
                         outString += "\n"
+                        outString += "p f1"+"\n\n"#goes on the last "position" in each frame
                             
                             
                             
                             
-                    outString += "p f1"+"\n\n"#goes on the last "position" in each frame
+                
                 outString += "p s1"+"\n\n"#close sequence
             outString += "p a1\n\n"
         
