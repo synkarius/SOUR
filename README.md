@@ -74,7 +74,7 @@ At the time of writing, SOUR is compatible with Away3D 4.0.7. To use it,:
 
 ## Attachments
 You can designate bones in the selected Mesh's Armature in Blender as "attachment points" by using the following naming convention:
-* _attach_to_ before the name of the bone
+* "_attach_to_" before the name of the bone
 
 When you export a SOUR file with attachment points and import it into Away3D, SOURParser will return an AttachmentHelper. 
 * AttachmentHelper's play() function should be called at the same time as the VertexAnimator's play() function for animation if attachments to stay sync'd.
