@@ -16,7 +16,7 @@ SOUR format has the following features:
 * optional compression
 * optional vertex animation (can be based on a rig, shape keys, or both)
 * optional attachment points (see section titled "attachment points")
-* stores vertices, normals, tangents, uvs, and faces
+* stores vertices, normals, tangents, uvs, and faces (normals and tangents optional)
 * at time of writing, has:
     * parser compatible with Away3D 4.0.0 - 4.0.9
 	* exporter compatible with patched Blender 2.64
@@ -75,6 +75,8 @@ At the time of writing, SOUR is compatible with Away3D 4.0.7. To use it,:
 ## Attachments
 You can designate bones in the selected Mesh's Armature in Blender as "attachment points" by using the following naming convention:
 * "_attach_to_" before the name of the bone
+* if using attachment points, the armature must have a root bone named "root" at 0,0,0 which all other bones or their parents/grandparents/etc are parented to
+* the "root" bone must have no rotations applied during any animation sequence
 
 When you export a SOUR file with attachment points and import it into Away3D, SOURParser will return an AttachmentHelper. 
 * AttachmentHelper's play() function should be called at the same time as the VertexAnimator's play() function for animation if attachments to stay sync'd.
