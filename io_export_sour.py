@@ -35,6 +35,7 @@ from bpy.props import *
 from bpy_extras.io_utils import ExportHelper
 import zlib
 from mathutils import Vector
+from decimal import *
 
 ###### EXPORT OPERATOR #######
 class Export_sour(bpy.types.Operator, ExportHelper):
@@ -62,7 +63,12 @@ class Export_sour(bpy.types.Operator, ExportHelper):
     )
     use_compression = BoolProperty(name="Compress",
         description="Compress the Model using COMPRESS Algorithm",
-        default=True)
+        default=True
+    )
+    export_lighting = BoolProperty(name="Vertex Lighting",
+        description="Exports Vertex Normals and Tangents",
+        default=True
+    )
 
     skeleton = None
 
@@ -71,15 +77,16 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         outString = ""
         outString += "h     SOUR Format 0.52\n"
         outString += "h     i: "+str(baseModel[5])+"   t: " + str(baseModel[6])+"   f: " + str(baseModel[7])+"\n\n"
-        outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+"\n\n"
+        outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+","+str(int(self.export_lighting))+"\n\n"
         outString += "p b0"+"\n\n"
-        outString += baseModel[0]+"\n\n"
-        outString += baseModel[1]+"\n\n"
-        outString += baseModel[2]+"\n\n"
-        outString += baseModel[3]+"\n\n"
-        outString += baseModel[4]+"\n\n"
-        if self.export_attach_points:#if attachment points
-            ap = baseModel[8]
+        outString += baseModel[0]+"\n\n"#verts
+        if self.export_lighting:
+            outString += baseModel[1]+"\n\n"#normals
+            outString += baseModel[2]+"\n\n"#tangents
+        outString += baseModel[3]+"\n\n"#uvs
+        outString += baseModel[4]+"\n\n"#faces
+        if self.export_attach_points:
+            ap = baseModel[8]#attachment points
             for i in range(0,len(ap)):
                 outString += "a " + ap[i][0]+","+str(ap[i][1])+","+str(ap[i][2])+","+str(ap[i][3])+","+str(ap[i][4])+","+str(ap[i][5])+","+str(ap[i][6])+"\n"
             outString += "\n"
@@ -148,7 +155,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         
         
         #get the mesh as an object:
-        mesh = bpy.context.scene.objects.active
+        mesh = self.selectedObj
         
         armature = mesh.find_armature()
         if armature != None:
@@ -235,6 +242,8 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         tangent = mesh.tangent_space.vertices[ mesh.tangent_space.tessfaces[currFace].vertices[currVert] ].tangent
         uv = mesh.tessface_uv_textures.active.data[currFace].uv[currVert] if mesh.tessface_uv_textures.active else None
         
+        
+        
         vpx,vpy,vpz = vertex
         vnx,vny,vnz = normal
         vtx,vty,vtz = tangent
@@ -243,11 +252,19 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         else:
             vux,vuy = 0,0
         
+        print([vpx,vpy,vpz])
+        
+        '''
         vertexStr = "v " + str(vpx * self.model_scale)+","+str(vpy * self.model_scale)+","+str(vpz * self.model_scale)
         normalStr = "n " + str(vnx)+","+str(vny)+","+str(vnz)
         tangentStr = "t " + str(vtx)+","+str(vty)+","+str(vtz)
         uvStr = "u " + str(vux)+","+str(vuy)
-        
+        '''
+        vertexStr = "v " + str(vpx * self.model_scale)+","+str(vpz * self.model_scale)+","+str(-vpy * self.model_scale)
+        normalStr = "n " + str(vnx)+","+str(vnz)+","+str(-vny)
+        tangentStr = "t " + str(vtx)+","+str(vtz)+","+str(-vty)
+        uvStr = "u " + str(vux)+","+str(vuy)
+        #'''
         currFacePartialData = ""
         
         #results:
@@ -305,6 +322,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         uvData = ""
         faceData = ""
         
+        megaCache = []
         vertexCache = []# a list of str()'d vertices used to figure out what's been indexed already as you go through the list
         normalCache = []
         tangentCache = []
@@ -426,7 +444,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                     gh = Vector((h.x,h.y,h.z))*mwInv#global coords of bone head
                     gt = Vector((t.x,t.y,t.z))*mwInv#global coords of bone tail
                     
-                    ap.append([bone.name[11:], gh.x, -gh.y, -gh.z, gt.x, -gt.y, -gt.z])#negate y and z of tail
+                    ap.append([bone.name[11:], gh.x*self.model_scale, gh.z*self.model_scale, -gh.y*self.model_scale, gt.x*self.model_scale, gt.z*self.model_scale, -gt.y*self.model_scale])#negate y and z of tail
                     
         return [vertexData,normalData,tangentData,uvData,faceData, len(vertexCache), len(tangentCache), numfaces, ap]        
 
@@ -441,15 +459,28 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
         
         
+        
         #bpy.ops.object.mode_set(mode='POSE')
         self.selectedObj = bpy.context.scene.objects.active#save a reference to this for matrix_world
 
         mesh = bpy.context.scene.objects.active.to_mesh(bpy.context.scene, True, 'PREVIEW')
         if self.export_attach_points:
             self.skeleton = bpy.context.scene.objects.active.find_armature()
+        '''    for b in range(0,len(self.skeleton.data.bones)):
+                self.skeleton.data.bones[b].select = False
+            self.skeleton.data.bones.active = self.skeleton.pose.bones["root"].bone
+            bpy.context.scene.objects.active.select = False
+            bpy.context.scene.objects.active = self.skeleton
+            self.skeleton.select = True
+            bpy.ops.object.mode_set(mode='POSE')
+            bpy.ops.transform.rotate(value=-1.5708, axis=(1, 0, 0), constraint_axis=(True, False, False), constraint_orientation='GLOBAL', mirror=False, proportional='DISABLED', proportional_edit_falloff='SMOOTH', proportional_size=1, snap=False, snap_target='CLOSEST', snap_point=(0, 0, 0), snap_align=False, snap_normal=(0, 0, 0), release_confirm=False)
+        '''    
         frames = self.createAnimation(mesh) if self.export_anim else None
         self.writeVertexAnimated(self.createVertexAnimBase(mesh), filepath, frames)
-
+        
+        '''if self.export_attach_points:
+            bpy.ops.transform.rotate(value=1.5708, axis=(1, 0, 0), constraint_axis=(True, False, False), constraint_orientation='GLOBAL', mirror=False, proportional='DISABLED', proportional_edit_falloff='SMOOTH', proportional_size=1, snap=False, snap_target='CLOSEST', snap_point=(0, 0, 0), snap_align=False, snap_normal=(0, 0, 0), release_confirm=False)
+        '''
         return {'FINISHED'}
 
     def invoke(self, context, event):

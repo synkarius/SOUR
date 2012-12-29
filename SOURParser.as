@@ -1,4 +1,4 @@
-package com.kumoshi
+package com.kumoshi 
 {
 	import away3d.animators.nodes.VertexClipNode;
 	import away3d.animators.VertexAnimationSet;
@@ -18,7 +18,7 @@ package com.kumoshi
 	{
 		private var _hasAnim:Boolean;
 		private var _hasAttachments:Boolean;
-		
+		private var _hasVertexLighting:Boolean;
 		
 		private var _autoderiveMissing:Boolean;
 		
@@ -172,6 +172,7 @@ package com.kumoshi
 					if (_hasAttachments) {
 						_attachmentHelper = new AttachmentHelper();
 					}
+					_hasVertexLighting = Boolean(int(_tempArray[2] ));
 					break;
 				case "p":
 					processSomething(_line);
@@ -239,8 +240,13 @@ package com.kumoshi
 					
 					_faceIndsAndTangs = new Vector.<uint>();//used for animation if animation exists
 					_indexedVertices = new Vector.<Number>();	//create empty temporary vectors for de-indexing
-					_indexedNormals = new Vector.<Number>();
-					_indexedTangents = new Vector.<Number>();
+					if (_hasVertexLighting) {
+						_indexedNormals = new Vector.<Number>();
+						_indexedTangents = new Vector.<Number>();
+					} else {
+						_baseGeom.subGeometries[0].autoDeriveVertexNormals = true;
+						_baseGeom.subGeometries[0].autoDeriveVertexTangents = true;
+					}
 					_indexedUVs = new Vector.<Number>();
 					_vertCache = new Vector.<String>();
 					_tangCache = new Vector.<String>();
@@ -248,8 +254,10 @@ package com.kumoshi
 				case "b1"://end base
 					_baseGeom.subGeometries[0].updateIndexData(_baseIndices);
 					_baseGeom.subGeometries[0].updateVertexData(_baseVertices);
-					_baseGeom.subGeometries[0].updateVertexNormalData(_baseNormals);
-					_baseGeom.subGeometries[0].updateVertexTangentData(_baseTangents);
+					if (_hasVertexLighting) {
+						_baseGeom.subGeometries[0].updateVertexNormalData(_baseNormals);
+						_baseGeom.subGeometries[0].updateVertexTangentData(_baseTangents);
+					}
 					_baseGeom.subGeometries[0].updateUVData(_baseUVs);
 					_baseComplete = true;
 					break;
@@ -284,6 +292,11 @@ package com.kumoshi
 					
 					var seqSubGeom:SubGeometry = new SubGeometry();
 					
+					if (!_hasVertexLighting) {
+						seqSubGeom.autoDeriveVertexNormals = true;
+						seqSubGeom.autoDeriveVertexTangents = true;
+					}
+					
 					_vertCache = new Vector.<String>();
 					_tangCache = new Vector.<String>();
 					
@@ -312,15 +325,20 @@ package com.kumoshi
 					
 					//if still null & not autoderive, copy from base
 					
-					if (!_animNormals && !_autoderiveMissing)_animNormals = _baseNormals;
-					if (!_animTangents && !_autoderiveMissing)_animTangents = _baseTangents;
+					if (_hasVertexLighting) {
+						if (!_animNormals && !_autoderiveMissing)_animNormals = _baseNormals;
+						if (!_animTangents && !_autoderiveMissing)_animTangents = _baseTangents;
+						
+					}
 					if (!_animUVs && !_autoderiveMissing)_animUVs = _baseUVs;
 					
 					
 					seqSubGeom.updateIndexData(_animIndices);
 					seqSubGeom.updateVertexData(_animVertices);
-					seqSubGeom.updateVertexNormalData(_animNormals);
-					seqSubGeom.updateVertexTangentData(_animTangents);
+					if (_hasVertexLighting) {
+						seqSubGeom.updateVertexNormalData(_animNormals);
+						seqSubGeom.updateVertexTangentData(_animTangents);
+					}
 					seqSubGeom.updateUVData(_animUVs);
 					
 					var seqGeom:Geometry = new Geometry();
@@ -343,7 +361,7 @@ package com.kumoshi
 			var flipUVs:int = 1;//used to flip UVs on the y-axis since for some reason, they're upside-down on export
 			
 			var _thisVertString:String = String(_indexedVertices[vi * 3] + "," + _indexedVertices[vi * 3 + 1] + "," + _indexedVertices[vi * 3 + 2]);
-			var _thisTangentString:String = String(_indexedTangents[ti * 3] + "," + _indexedTangents[ti * 3 + 1] + "," + _indexedTangents[ti * 3 + 2]);
+			var _thisTangentString:String = (_hasVertexLighting)?String(_indexedTangents[ti * 3] + "," + _indexedTangents[ti * 3 + 1] + "," + _indexedTangents[ti * 3 + 2]):"noLighting";
 			_thisTangentString += _thisVertString;//important: if we've seen this tangent before WITH THIS INDEX
 			if (_vertCache.indexOf(_thisVertString) == -1) {//if we haven't seen this vertex before...
 				_vertCache.push(_thisVertString);//...add it...
@@ -351,8 +369,8 @@ package com.kumoshi
 				
 				if(indices)indices.push(_indexer++);
 				if(vertices)vertices.push(_indexedVertices[vi*3], _indexedVertices[vi*3+1], _indexedVertices[vi*3+2]);
-				if(normals)normals.push(_indexedNormals[ni*3], _indexedNormals[ni*3+1], _indexedNormals[ni*3+2]);
-				if(tangents)tangents.push(_indexedTangents[ti*3], _indexedTangents[ti*3+1], _indexedTangents[ti*3+2]);
+				if(normals && _hasVertexLighting)normals.push(_indexedNormals[ni*3], _indexedNormals[ni*3+1], _indexedNormals[ni*3+2]);
+				if(tangents && _hasVertexLighting)tangents.push(_indexedTangents[ti*3], _indexedTangents[ti*3+1], _indexedTangents[ti*3+2]);
 				if(uvs)uvs.push(_indexedUVs[ui*2], flipUVs-_indexedUVs[ui*2+1]);
 			} else {//we have seen this vert before
 				if (_tangCache.indexOf(_thisTangentString) == -1) { //but what about the vert with this tangent? if not...
