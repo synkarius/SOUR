@@ -72,7 +72,7 @@ At the time of writing, SOUR is compatible with Away3D 4.0.7. To use it,:
 * AssetLibrary.loadData(sour_data, null, null, new SOURParser());
 * The parser will hand back a Geometry, if there's animation, a VertexAnimationState, and if there are attachment points, an AttachmentHelper
 
-## Attachments
+## Attachment Points
 You can designate bones in the selected Mesh's Armature in Blender as "attachment points" by using the following naming convention:
 * "_attach_to_" before the name of the bone
 * if using attachment points, the armature must have a root bone named "root" at 0,0,0 which all other bones or their parents/grandparents/etc are parented to
