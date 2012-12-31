@@ -276,8 +276,7 @@ package com.kumoshi
 					var vcn:VertexClipNode = new VertexClipNode();
 					for (var f:int = 0; f < _seqGeoms.length; f++) {
 						vcn.addFrame(_seqGeoms[f], Number(_seqDurations[f]));
-						vcn.fixedFrameRate = true;
-						//trace("adding frame of: " +_seqName + " dur in milliseconds: " + Number(_seqDurations[f] * 33.33));
+						vcn.fixedFrameRate = false;
 					}
 					var vas:VertexAnimationState = new VertexAnimationState(vcn);
 					_vertexAnimSet.addState(_seqName, vas);

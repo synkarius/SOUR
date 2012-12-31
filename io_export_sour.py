@@ -75,7 +75,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
     def writeVertexAnimated(self, baseModel, filename, sequences=None):
         
         outString = ""
-        outString += "h     SOUR Format 0.52\n"
+        outString += "h     SOUR Format 0.54\n"
         outString += "h     i: "+str(baseModel[5])+"   t: " + str(baseModel[6])+"   f: " + str(baseModel[7])+"\n\n"
         outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+","+str(int(self.export_lighting))+"\n\n"
         outString += "p b0"+"\n\n"
@@ -194,7 +194,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         
         for k in range(0, numKeyframes):
             #if k != 0:#the first frame has no duration; it is the same as the last frame
-            if k == numKeyframes-1:#the last frame has 0 duration, since it is also the first frame or the destination
+            if allKeyframes[k] in ends:#the end frame of each sequence has duration 0
                 allKeyframeDurations.append(0)
             else:
                 allKeyframeDurations.append(allKeyframes[k+1]-allKeyframes[k])
@@ -219,7 +219,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                 seq = []
                 seq.append(names[nameIndex])
                 nameIndex += 1
-            seq.append(allKeyframeDurations[h]/blenderFramerate*secondsToMilliseconds)
+            seq.append(round(allKeyframeDurations[h]/blenderFramerate*secondsToMilliseconds))
             
             meshGeo = mesh.to_mesh(bpy.context.scene, True, 'PREVIEW')
             animBase = self.createVertexAnimBase(meshGeo)#0 verts, 1 norms, 2 tangents
@@ -243,7 +243,6 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         uv = mesh.tessface_uv_textures.active.data[currFace].uv[currVert] if mesh.tessface_uv_textures.active else None
         
         
-        
         vpx,vpy,vpz = vertex
         vnx,vny,vnz = normal
         vtx,vty,vtz = tangent
@@ -252,19 +251,12 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         else:
             vux,vuy = 0,0
         
-        print([vpx,vpy,vpz])
         
-        '''
-        vertexStr = "v " + str(vpx * self.model_scale)+","+str(vpy * self.model_scale)+","+str(vpz * self.model_scale)
-        normalStr = "n " + str(vnx)+","+str(vny)+","+str(vnz)
-        tangentStr = "t " + str(vtx)+","+str(vty)+","+str(vtz)
-        uvStr = "u " + str(vux)+","+str(vuy)
-        '''
         vertexStr = "v " + str(vpx * self.model_scale)+","+str(vpz * self.model_scale)+","+str(-vpy * self.model_scale)
         normalStr = "n " + str(vnx)+","+str(vnz)+","+str(-vny)
         tangentStr = "t " + str(vtx)+","+str(vtz)+","+str(-vty)
         uvStr = "u " + str(vux)+","+str(vuy)
-        #'''
+        
         currFacePartialData = ""
         
         #results:
@@ -460,27 +452,14 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         
         
         
-        #bpy.ops.object.mode_set(mode='POSE')
         self.selectedObj = bpy.context.scene.objects.active#save a reference to this for matrix_world
 
         mesh = bpy.context.scene.objects.active.to_mesh(bpy.context.scene, True, 'PREVIEW')
         if self.export_attach_points:
             self.skeleton = bpy.context.scene.objects.active.find_armature()
-        '''    for b in range(0,len(self.skeleton.data.bones)):
-                self.skeleton.data.bones[b].select = False
-            self.skeleton.data.bones.active = self.skeleton.pose.bones["root"].bone
-            bpy.context.scene.objects.active.select = False
-            bpy.context.scene.objects.active = self.skeleton
-            self.skeleton.select = True
-            bpy.ops.object.mode_set(mode='POSE')
-            bpy.ops.transform.rotate(value=-1.5708, axis=(1, 0, 0), constraint_axis=(True, False, False), constraint_orientation='GLOBAL', mirror=False, proportional='DISABLED', proportional_edit_falloff='SMOOTH', proportional_size=1, snap=False, snap_target='CLOSEST', snap_point=(0, 0, 0), snap_align=False, snap_normal=(0, 0, 0), release_confirm=False)
-        '''    
         frames = self.createAnimation(mesh) if self.export_anim else None
         self.writeVertexAnimated(self.createVertexAnimBase(mesh), filepath, frames)
         
-        '''if self.export_attach_points:
-            bpy.ops.transform.rotate(value=1.5708, axis=(1, 0, 0), constraint_axis=(True, False, False), constraint_orientation='GLOBAL', mirror=False, proportional='DISABLED', proportional_edit_falloff='SMOOTH', proportional_size=1, snap=False, snap_target='CLOSEST', snap_point=(0, 0, 0), snap_align=False, snap_normal=(0, 0, 0), release_confirm=False)
-        '''
         return {'FINISHED'}
 
     def invoke(self, context, event):

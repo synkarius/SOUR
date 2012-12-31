@@ -28,11 +28,11 @@ package com.kumoshi
 		private var _seqNames:Vector.<String>;
 		private var _setupSeqLengths:Vector.<Number>;//[name
 		private var _pointNames:Vector.<String>;
-		//private var _animator:VertexAnimator;
 		
 		private var _lastTimer:int;
 		
 		private var _data:Vector.<Number>;
+		
 		
 		public function AttachmentHelper() 
 		{
@@ -65,8 +65,8 @@ package com.kumoshi
 			_seqNames = null;
 			_setupSeqLengths = null;
 			_pointNames = null;
+			
 		}
-		
 		
 		public function addPoint(name:String, head:Vector3D, tail:Vector3D, seqName:String = null, frameDur:Number = -1):void {
 			_setupPointNames.push(name);
@@ -111,8 +111,6 @@ package com.kumoshi
 				}
 				_setupSeqLengths[_seqNames.indexOf(_setupSeqNames[i])] += _durations[i];
 				
-				
-				
 				if (_pointNames.indexOf(_setupPointNames[i])==-1) {//get a list of point names
 					_pointNames.push(_setupPointNames[i]);
 				}
@@ -122,7 +120,8 @@ package com.kumoshi
 			}
 			
 			for (var h:int = 0; h < _seqNames.length; h++) {//so I don't have to do indexOf() later, a dictionary of sequence lengths
-				_seqDict[_seqNames[h] + "len"] = _setupSeqLengths[h]/_pointNames.length;
+				_seqDict[_seqNames[h] + "len"] = _setupSeqLengths[h] / _pointNames.length;
+				
 			}
 			
 			
@@ -152,6 +151,9 @@ package com.kumoshi
 			var totalTime:int = 0;
 			var start:Number;
 			var end:Number;
+			
+			
+			
 			intervalLoop: for (var i:int = 0; i < point_sequence.length; i++) {
 				var dur:Number = (point_sequence[i][2] as Number).valueOf();
 				
@@ -164,13 +166,19 @@ package com.kumoshi
 					nextFrame = i + 1;
 					if (nextFrame == point_sequence.length) nextFrame = 0;
 					
+					
+					
 					break intervalLoop;
 				} 
 			}
 			
 			
+			
 			var fraction:Number = (sequenceTime-start) / (end - start);
 			var result:Vector.<Number> = new Vector.<Number>();
+			
+			
+			//trace("st-start: " + (sequenceTime-start) + " / end-start " + (end - start) + " = " +fraction);
 			
 			for (var k:int = 0; k < pointNames.length; k++) {
 				point_sequence = _seqDict[pointNames[k] + seqName];
