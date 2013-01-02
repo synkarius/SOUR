@@ -64,7 +64,7 @@ package
 		
 		[Embed(source="../lib/alice.n.png")]private var _normal:Class;
 		[Embed(source="../lib/alice.d.jpg")]private var _diffuse:Class;
-		[Embed(source = "../lib/aliceNamed.sour", mimeType = "application/octet-stream")]private var _womanData:Class;
+		[Embed(source = "../lib/alice.sour", mimeType = "application/octet-stream")]private var _womanData:Class;
 		
 		[Embed(source="../lib/bat.sour", mimeType="application/octet-stream")]private var _batData:Class;
 		[Embed(source="../lib/batDiffuse.png")]private var _batDiffuse:Class;
