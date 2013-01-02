@@ -64,7 +64,7 @@ package
 		
 		[Embed(source="../lib/alice.n.png")]private var _normal:Class;
 		[Embed(source="../lib/alice.d.jpg")]private var _diffuse:Class;
-		[Embed(source = "../lib/alice.sour", mimeType = "application/octet-stream")]private var _womanData:Class;
+		[Embed(source = "../lib/aliceNamed.sour", mimeType = "application/octet-stream")]private var _womanData:Class;
 		
 		[Embed(source="../lib/bat.sour", mimeType="application/octet-stream")]private var _batData:Class;
 		[Embed(source="../lib/batDiffuse.png")]private var _batDiffuse:Class;
@@ -185,8 +185,11 @@ package
 					break;
 				case AssetType.ENTITY: 
 					_atc = e.asset as AttachmentHelper;
-					
 					trace("got attachment point(s): woman");
+					break;
+				case AssetType.MESH:
+					trace("mesh name: " + (e.asset as Mesh).name);
+					//the parser returns a named mesh too, but it's not being used in this example
 					break;
 				default: throw new Error("unknown thing got parsed by SOURParser: " + e.asset.assetType); break;
 			}
