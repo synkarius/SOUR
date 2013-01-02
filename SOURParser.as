@@ -5,11 +5,13 @@ package com.kumoshi
 	import away3d.animators.VertexAnimationState;
 	import away3d.core.base.Geometry;
 	import away3d.core.base.SubGeometry;
+	import away3d.entities.Mesh;
 	import away3d.loaders.parsers.ParserBase;
 	import away3d.loaders.parsers.ParserDataFormat;
 	import away3d.loaders.parsers.utils.ParserUtil;
 	import flash.geom.Vector3D;
 	import flash.utils.ByteArray;
+	
 	/**
 	 * ...
 	 * @author synkarius (dconway1985@gmail.com)
@@ -56,6 +58,8 @@ package com.kumoshi
 		private var _animUVs:Vector.<Number>;
 		
 		private var _baseGeom:Geometry;
+		
+		private var _name:String;
 		
 		private var _rounds:uint;
 		
@@ -125,6 +129,11 @@ package com.kumoshi
 			
 			if (_baseComplete && (!_baseFinalized)) {
 				finalizeAsset(_baseGeom, "");
+				
+				var  m:Mesh = new Mesh(_baseGeom);
+				m.name = _name ||= "";
+				finalizeAsset(m);
+				
 				_baseFinalized = true;
 			}
 			if (_animComplete && (!_animFinalized)) {
@@ -173,6 +182,9 @@ package com.kumoshi
 						_attachmentHelper = new AttachmentHelper();
 					}
 					_hasVertexLighting = Boolean(int(_tempArray[2] ));
+					break;
+				case "i":
+					_name = _tempArray[0];
 					break;
 				case "p":
 					processSomething(_line);
