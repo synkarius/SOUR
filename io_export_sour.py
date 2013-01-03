@@ -47,6 +47,9 @@ class Export_sour(bpy.types.Operator, ExportHelper):
 
     selectedObj = None
     selectedArma = None
+    selectedName = None
+    
+    hasUVs = False
 
     model_scale = IntProperty(name="Scale",
         description="Number to Scale Model By",
@@ -75,15 +78,18 @@ class Export_sour(bpy.types.Operator, ExportHelper):
     def writeVertexAnimated(self, baseModel, filename, sequences=None):
         
         outString = ""
-        outString += "h     SOUR Format 0.54\n"
+        outString += "h     SOUR Format 0.56\n"
         outString += "h     i: "+str(baseModel[5])+"   t: " + str(baseModel[6])+"   f: " + str(baseModel[7])+"\n\n"
-        outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+","+str(int(self.export_lighting))+"\n\n"
+        outString += "o " + str(int(self.export_anim))+","+str(int(self.export_attach_points))+","+str(int(self.export_lighting))+","+str(int(self.hasUVs))+"\n\n"
+        outString += "i " + str(self.selectedName)+"\n\n"
         outString += "p b0"+"\n\n"
         outString += baseModel[0]+"\n\n"#verts
         if self.export_lighting:
             outString += baseModel[1]+"\n\n"#normals
-            outString += baseModel[2]+"\n\n"#tangents
-        outString += baseModel[3]+"\n\n"#uvs
+            if self.hasUVs:
+                outString += baseModel[2]+"\n\n"#tangents
+        if self.hasUVs:
+            outString += baseModel[3]+"\n\n"#uvs
         outString += baseModel[4]+"\n\n"#faces
         if self.export_attach_points:
             ap = baseModel[8]#attachment points
@@ -248,6 +254,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         vtx,vty,vtz = tangent
         if uv:
             vux,vuy = uv
+            self.hasUVs = True
         else:
             vux,vuy = 0,0
         
@@ -453,7 +460,8 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         
         
         self.selectedObj = bpy.context.scene.objects.active#save a reference to this for matrix_world
-
+        self.selectedName = self.selectedObj.name
+        
         mesh = bpy.context.scene.objects.active.to_mesh(bpy.context.scene, True, 'PREVIEW')
         if self.export_attach_points:
             self.skeleton = bpy.context.scene.objects.active.find_armature()
