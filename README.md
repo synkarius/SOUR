@@ -30,6 +30,8 @@ SOUR format does not:
 SOUR format is compressed using the COMPRESS algorithm. Once uncompressed, the first character of each line tells the parser what to do:
 
 * h	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;version and model info  
+* o	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4 booleans which tell the parser: has animation, attachment(s), lighting, uvs  
+* i	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name of mesh
 * p b0  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;begin base asset, unanimated  
 * v	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex: x,y,z  
 * n	    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexed vertex normal:	x,y,z  
