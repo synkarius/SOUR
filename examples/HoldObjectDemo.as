@@ -158,19 +158,30 @@ package
 		
 		private function onParseObject(e:AssetEvent):void {
 			var _tm:TextureMaterial;
-			if (!_bat) {
-				_tm = new TextureMaterial(new BitmapTexture(new _batDiffuse().bitmapData));
-				_tm.lightPicker = _lp;
-				_bat = new Mesh(e.asset as Geometry, _tm);
-				AssetLibrary.loadData(new _swordData(), null, null, new SOURParser());
-				trace("got geometry: bat");
-			} else {
-				_tm = new TextureMaterial(new BitmapTexture(new _swordDiffuse().bitmapData));
-				_tm.lightPicker = _lp;
-				_sword = new Mesh(e.asset as Geometry, _tm);
-				AssetLibrary.removeEventListener(AssetEvent.ASSET_COMPLETE, onParseObject);
-				trace("got geometry: sword");
+			
+			if (e.asset.assetType == AssetType.GEOMETRY) {
+				if (!_bat) {
+					_tm = new TextureMaterial(new BitmapTexture(new _batDiffuse().bitmapData));
+					_tm.lightPicker = _lp;
+					_bat = new Mesh(e.asset as Geometry, _tm);
+					AssetLibrary.loadData(new _swordData(), null, null, new SOURParser());
+					trace("got geometry: bat");
+				} else {
+					_tm = new TextureMaterial(new BitmapTexture(new _swordDiffuse().bitmapData));
+					_tm.lightPicker = _lp;
+					
+					trace("sword geom: " + e.asset);
+					
+					_sword = new Mesh(e.asset as Geometry, _tm);
+					AssetLibrary.removeEventListener(AssetEvent.ASSET_COMPLETE, onParseObject);
+					trace("got geometry: sword");
+				}
 			}
+			
+			
+			
+			
+			
 		}
 		
 		private function onParseWomanComplete(e:AssetEvent):void {
