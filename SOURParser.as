@@ -83,7 +83,7 @@ package com.kumoshi
 		 */
 		public function SOURParser(autoderiveMissingInfo:Boolean=false) 
 		{
-			super(ParserDataFormat.PLAIN_TEXT);
+			super(ParserDataFormat.BINARY);
 			
 			_line = _indexer = _rounds = 0;
 			_autoderiveMissing = autoderiveMissingInfo;
