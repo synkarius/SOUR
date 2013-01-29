@@ -75,7 +75,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
 
     skeleton = None
 
-    def writeVertexAnimated(self, baseModel, filename, sequences=None):
+    def writeToFile(self, baseModel, filename, sequences=None):
         
         outString = ""
         outString += "h     SOUR Format 0.56\n"
@@ -120,17 +120,14 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                         modAtc = 99
                         position = f%2
                     
-                    #position = f%3 if self.export_attach_points else f%2
                     if position == modDur:
                         outString += "p f0"+"\n\n"
                         outString += "d " + str(seq[f])+"\n\n"
                     if position == modVerts:#verts
-                        #unsure
                         outString += seq[f]+"\n\n"
                         if not self.export_attach_points:
                             outString += "p f1"+"\n\n"#goes on the last "position" in each frame
                     if position == modAtc:
-                        #if self.export_attach_points:#if attachment points
                         ap = seq[f]
                         for i in range(0,len(ap)):
                             outString += "a " + ap[i][0]+","+str(ap[i][1])+","+str(ap[i][2])+","+str(ap[i][3])+","+str(ap[i][4])+","+str(ap[i][5])+","+str(ap[i][6])+"\n"
@@ -156,7 +153,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         outfile.close()
     
       
-    def createAnimation(self, _mesh):
+    def getFrames(self, _mesh):
         #figure out if we're using armature keyframes or mesh keyframes
         
         
@@ -228,7 +225,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
             seq.append(round(allKeyframeDurations[h]/blenderFramerate*secondsToMilliseconds))
             
             meshGeo = mesh.to_mesh(bpy.context.scene, True, 'PREVIEW')
-            animBase = self.createVertexAnimBase(meshGeo)#0 verts, 1 norms, 2 tangents
+            animBase = self.getSingleFrame(meshGeo)#0 verts, 1 norms, 2 tangents
             
             seq.append(animBase[0])#verts
             if self.export_attach_points:
@@ -314,7 +311,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         
         return [rv, rn, rt, ru, rcpfd, vIndex, nIndex, tIndex, uIndex]
     
-    def createVertexAnimBase(self, mesh):
+    def getSingleFrame(self, mesh):
         vertexData = ""
         normalData = ""
         tangentData = ""
@@ -328,8 +325,6 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         uvCache = []
         numfaces = 0
         
-        #currIndex = 0#used for indices list
-        #currTangentIndex = 0
         vIndex = 0
         nIndex = 0
         tIndex = 0
@@ -346,14 +341,12 @@ class Export_sour(bpy.types.Operator, ExportHelper):
             
             indicesInFace = [0,1,2]
             for currVert in indicesInFace:#range(0,len(mesh.tessfaces[currFace].vertices)):
-                #reinsert stuff here
+                
                 extr = self.extractInfoFromVert(mesh, currFace, currVert, vertexCache, normalCache, tangentCache, uvCache, vIndex, nIndex, tIndex, uIndex)
                 if extr[0]:
                     if len(vertexData)>0:
                         vertexData += "\n"
-                        #normalData += "\n"
                     vertexData += extr[0]
-                    #normalData += extr[1]
                 
                 if extr[1]:
                     if len(normalData)>0:
@@ -363,9 +356,7 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                 if extr[2]:
                     if len(tangentData)>0:
                         tangentData += "\n"
-                        #uvData += "\n"
                     tangentData += extr[2]
-                    #uvData += extr[3]
                 
                 if extr[3]:
                     if len(uvData)>0:
@@ -389,15 +380,13 @@ class Export_sour(bpy.types.Operator, ExportHelper):
                 faceData += "f "
                 
                 indicesInFace = [0,2,3]
-                for currVert in indicesInFace:#range(0,len(mesh.tessfaces[currFace].vertices)):
-                    #reinsert stuff here
+                for currVert in indicesInFace:
+                    
                     extr = self.extractInfoFromVert(mesh, currFace, currVert, vertexCache, normalCache, tangentCache, uvCache, vIndex, nIndex, tIndex, uIndex)
                     if extr[0]:
                         if len(vertexData)>0:
                             vertexData += "\n"
-                            #normalData += "\n"
                         vertexData += extr[0]
-                        #normalData += extr[1]
                     
                     if extr[1]:
                         if len(normalData)>0:
@@ -434,11 +423,10 @@ class Export_sour(bpy.types.Operator, ExportHelper):
             mwInv = self.selectedObj.matrix_world.copy().inverted()
             for i in range(0,len(self.skeleton.pose.bones)):
                 if self.skeleton.pose.bones[i].name[:11] == "_attach_to_":#"_attach_to_", the naming convention is 11 characters long
-                    #print("found attachment bone: " + self.skeleton.pose.bones[i].name[11:])
+                    
                     bone = self.skeleton.pose.bones[i]
                     h = bone.head
                     t = bone.tail
-                    
                     
                     gh = Vector((h.x,h.y,h.z))*mwInv#global coords of bone head
                     gt = Vector((t.x,t.y,t.z))*mwInv#global coords of bone tail
@@ -457,16 +445,14 @@ class Export_sour(bpy.types.Operator, ExportHelper):
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
         
-        
-        
         self.selectedObj = bpy.context.scene.objects.active#save a reference to this for matrix_world
         self.selectedName = self.selectedObj.name
         
         mesh = bpy.context.scene.objects.active.to_mesh(bpy.context.scene, True, 'PREVIEW')
         if self.export_attach_points:
             self.skeleton = bpy.context.scene.objects.active.find_armature()
-        frames = self.createAnimation(mesh) if self.export_anim else None
-        self.writeVertexAnimated(self.createVertexAnimBase(mesh), filepath, frames)
+        frames = self.getFrames(mesh) if self.export_anim else None
+        self.writeToFile(self.getSingleFrame(mesh), filepath, frames)
         
         return {'FINISHED'}
 
@@ -493,15 +479,12 @@ class Export_sour(bpy.types.Operator, ExportHelper):
 def menu_func(self, context):
     self.layout.operator(Export_sour.bl_idname, text="SOUR (.sour)")
 
-
 def register():
     bpy.utils.register_module(__name__)
-
     bpy.types.INFO_MT_file_export.append(menu_func)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-
     bpy.types.INFO_MT_file_export.remove(menu_func)
 
 if __name__ == "__main__":
