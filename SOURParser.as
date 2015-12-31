@@ -12,10 +12,6 @@ package com.kumoshi
 	import flash.geom.Vector3D;
 	import flash.utils.ByteArray;
 	
-	/**
-	 * ...
-	 * @author synkarius (dconway1985@gmail.com)
-	 */
 	public class SOURParser extends ParserBase 
 	{
 		private var _hasAnim:Boolean;
